@@ -4,7 +4,7 @@ import math
 import datetime
 import logging
 import time
-from config import SAVE_DIR
+from config import SAVE_DIR, MAVLINK_CONNECTION, TCP_HOST, TCP_PORT
 from mavlink_reader import MAVLinkReader
 from camera_capture import CameraCapture
 from geotag import embed_gps
@@ -23,7 +23,7 @@ def setup_logger():
         filename=log_file,
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     return logging.getLogger()
 
@@ -39,14 +39,20 @@ def capture_image(mav_reader, cam, logger, trigger_source="UNKNOWN"):
         telemetry = mav_reader.get_telemetry()
 
         if telemetry["fix_type"] < 3 or telemetry["lat"] is None:
-            print(f"No GPS fix (fix_type={telemetry['fix_type']}, "
-                  f"satellites={telemetry['satellites']})")
-            logger.warning(f"[{trigger_source}] Capture skipped: "
-                           f"no GPS fix (fix_type={telemetry['fix_type']})")
+            print(
+                f"No GPS fix (fix_type={telemetry['fix_type']}, "
+                f"satellites={telemetry['satellites']})"
+            )
+            logger.warning(
+                f"[{trigger_source}] Capture skipped: "
+                f"no GPS fix (fix_type={telemetry['fix_type']})"
+            )
             return
 
         frame = frame_data["image"]
-        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y%m%d_%H%M%S"
+        )
         file_path = os.path.join(SAVE_DIR, f"image_{timestamp}.jpg")
 
         cv2.imwrite(file_path, frame)
@@ -54,11 +60,13 @@ def capture_image(mav_reader, cam, logger, trigger_source="UNKNOWN"):
 
         # Logging — use actual camera pan if available, fall back to yaw
         camera_pan = telemetry.get("camera_pan")
-        yaw_rad    = telemetry.get("yaw")
+        yaw_rad = telemetry.get("yaw")
 
         if camera_pan is not None:
-            direction_str = f"CamPan: {round(camera_pan % 360, 1)}° | " \
-                            f"CamTilt: {round(telemetry.get('camera_tilt', 0), 1)}°"
+            direction_str = (
+                f"CamPan: {round(camera_pan % 360, 1)}° | "
+                f"CamTilt: {round(telemetry.get('camera_tilt', 0), 1)}°"
+            )
         elif yaw_rad is not None:
             direction_str = f"Yaw (fallback): {round(math.degrees(yaw_rad) % 360, 1)}°"
         else:
@@ -100,8 +108,7 @@ def main():
     def on_mavlink_trigger():
         count = mav_reader.get_trigger_count()
         logger.info(f"MAVLink trigger #{count} received from Pixhawk")
-        capture_image(mav_reader, cam, logger,
-                      trigger_source=f"MAVLINK_{count}")
+        capture_image(mav_reader, cam, logger, trigger_source=f"MAVLINK_{count}")
 
     def on_mission_complete():
         print("")
@@ -119,9 +126,9 @@ def main():
         )
 
     mav_reader = MAVLinkReader(
-        connection_string="udp:127.0.0.1:14551",
+        connection_string=MAVLINK_CONNECTION,
         on_camera_trigger=on_mavlink_trigger,
-        on_mission_complete=on_mission_complete
+        on_mission_complete=on_mission_complete,
     )
 
     # --------------------------------------------------
@@ -133,14 +140,14 @@ def main():
         logger.info("TCP CAPTURE command received")
         capture_image(mav_reader, cam, logger, trigger_source="TCP_MANUAL")
 
-    tcp_listener = TCPListener(host="0.0.0.0", port=5555, callback=on_tcp_command)
+    tcp_listener = TCPListener(host=TCP_HOST, port=TCP_PORT, callback=on_tcp_command)
     tcp_listener.start()
 
     print("=" * 55)
-    print("  Drone Mapping System — Ready")
-    print("  MAVLink : udp:127.0.0.1:14551")
+    print("  Trident Drone Mapping System 🔱 — Ready")
+    print(f"  MAVLink : {MAVLINK_CONNECTION}")
     print("  Camera  : nadir lock sent via Telem 2")
-    print("  Manual  : echo CAPTURE | nc 127.0.0.1 5555")
+    print(f"  Manual  : echo CAPTURE | nc 127.0.0.1 {TCP_PORT}")
     print("=" * 55)
     logger.info("System started | Nadir lock sent | Awaiting triggers")
 

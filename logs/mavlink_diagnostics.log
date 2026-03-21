@@ -1,0 +1,25 @@
+
+============================================================
+Session started: 2026-02-25 11:26:39
+============================================================
+[11:26:39.539] Heartbeat received — system 0 component 0
+Watching for messages... (Ctrl+C to stop)
+
+[11:26:39.573] POSITION | lat=5.650757 lon=-0.194653 alt=250.1m
+
+============================================================
+Session started: 2026-02-25 11:33:13
+============================================================
+[11:33:13.552] Heartbeat received — system 0 component 0
+Watching for messages... (Ctrl+C to stop)
+
+[11:33:13.653] POSITION | lat=5.650757 lon=-0.194653 alt=250.1m
+[11:33:13.751] POSITION | lat=5.650757 lon=-0.194653 alt=250.1m
+
+============================================================
+Session started: 2026-02-25 11:50:12
+============================================================
+[11:50:12.545] Heartbeat received — system 0 component 0
+Watching for messages... (Ctrl+C to stop)
+
+[11:50:12.636] POSITION | lat=5.650757 lon=-0.194653 alt=250.2m

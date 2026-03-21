@@ -51,8 +51,19 @@ class MAVLinkReader:
 
         threading.Thread(target=self._reader_loop, daemon=True).start()
 
-        # Send nadir lock 2 seconds after startup
-        threading.Timer(2.0, self.lock_camera_nadir).start()
+        # Respect CAMERA_MODE from config
+        # "nadir" = lock to -90° for mapping
+        # "free"  = no lock, camera moves freely
+        try:
+            from config import CAMERA_MODE
+        except Exception:
+            CAMERA_MODE = "free"
+
+        if CAMERA_MODE == "nadir":
+            threading.Timer(2.0, self.lock_camera_nadir).start()
+            print("Camera mode: NADIR LOCK (-90°)")
+        else:
+            print("Camera mode: FREE — camera moves freely, no lock sent")
 
     # --------------------------------------------------
     # Nadir Lock
@@ -137,7 +148,7 @@ class MAVLinkReader:
 
                 self._last_mode = current_mode
 
- # --------------------------------------------------
+            # --------------------------------------------------
             # Camera trigger detection — outside telemetry lock
             # so a slow capture never blocks GPS updates.
             #
